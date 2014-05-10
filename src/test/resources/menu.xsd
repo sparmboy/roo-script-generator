@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.coup.com/menuorder/schema" targetNamespace="http://www.coup.com/menuorder/schema">
+    <complexType name="Dish">
+    	<complexContent>
+    		<extension base="tns:MenuItem">
+    			<sequence>
+    				<element name="stock" type="int" maxOccurs="1"
+    					minOccurs="0">
+    				</element>
+    				<element name="cuisine" type="tns:Cusine"
+    					maxOccurs="1" minOccurs="0">
+    				</element>
+    				<element name="containsNuts" type="boolean"
+    					maxOccurs="1" minOccurs="0">
+    				</element>
+    				<element name="containsMilk" type="boolean"
+    					maxOccurs="1" minOccurs="0">
+    				</element>
+    				<element name="vegan" type="boolean" maxOccurs="1"
+    					minOccurs="0">
+    				</element>
+    				<element name="vegitarian" type="boolean"
+    					maxOccurs="1" minOccurs="0">
+    				</element>
+    				<element name="spiceRating" type="tns:SpiceRating"
+    					maxOccurs="1" minOccurs="0">
+    				</element>
+    				<element name="nutritionalInformation"
+    					type="tns:NutritionalInformation" maxOccurs="unbounded"
+    					minOccurs="0">
+    				</element>
+
+    			</sequence>
+    		</extension>
+    	</complexContent>
+    </complexType>
+
+    <simpleType name="Cusine">
+    	<restriction base="string">
+    		<enumeration value="ENGLISH"></enumeration>
+    		<enumeration value="FRENCH"></enumeration>
+    		<enumeration value="INDIAN"></enumeration>
+    		<enumeration value="JAPANESE"></enumeration>
+    		<enumeration value="CHINESE"></enumeration>
+    		<enumeration value="SPANISH"></enumeration>
+    		<enumeration value="ITALIAN"></enumeration>
+    	</restriction>
+    </simpleType>
+
+    <simpleType name="SpiceRating">
+    	<restriction base="string">
+    		<enumeration value="1"></enumeration>
+    		<enumeration value="2"></enumeration>
+    		<enumeration value="3"></enumeration>
+    	</restriction>
+    </simpleType>
+
+    <complexType name="NutritionalInformation">
+    	<sequence>
+    		<element name="type"
+    			type="tns:NutritionalInformationQuantity">
+    		</element>
+    		<element name="energyKJ" type="double"></element>
+    		<element name="energykcal" type="double"></element>
+    		<element name="protein" type="double"></element>
+    		<element name="carbohydrate" type="double"></element>
+    		<element name="fat" type="double"></element>
+    		<element name="mono-unsaturates" type="double"></element>
+    		<element name="polyunsaturates" type="double"></element>
+    		<element name="fibres" type="double"></element>
+    		<element name="salt" type="double"></element>
+    		<element name="dish" type="tns:Dish" maxOccurs="1" minOccurs="1"></element>
+    	</sequence>
+    </complexType>
+
+
+    <simpleType name="NutritionalInformationQuantity">
+    	<restriction base="string">
+    		<enumeration value="PER_100g"></enumeration>
+    		<enumeration value="PER_SERVING"></enumeration>
+    	</restriction>
+    </simpleType>
+
+    <complexType name="Menu">
+    	<sequence>
+    		<element name="title" type="string"></element>
+    		<element name="description" type="string"></element>
+    		<element name="menuItems" type="tns:MenuItem" maxOccurs="unbounded" minOccurs="1"></element>
+    		<element name="venue" type="tns:Venue" maxOccurs="1" minOccurs="1"/>
+    	</sequence>
+    </complexType>
+
+    <complexType name="Venue">
+    	<sequence>
+    		<element name="title" type="string"></element>
+    		<element name="description" type="string"></element>
+    		<element name="address" type="string"></element>
+    		<element name="gpsCoords">
+    			<simpleType>
+    				<restriction base="string">
+    					<pattern
+    						value="-?\d{1,2}\.\d{6,6}\,-?\d{1,2}\.\d{6,6}">
+    					</pattern>
+    				</restriction>
+    			</simpleType>
+    		</element>
+    		<element name="phone" type="string"></element>
+    		<element name="email" type="string"></element>
+    		<element name="twitter" type="string"></element>
+    		<element name="facebook" type="string"></element>
+    		<element name="url" type="string"></element>
+    		<element name="menus" type="tns:Menu" maxOccurs="unbounded" minOccurs="1"></element>
+    	</sequence>
+    </complexType>
+    
+    <complexType name="MenuItem">
+    	<sequence>    		
+    		<element name="menu" type="tns:Menu" minOccurs="1" maxOccurs="1"></element>
+    		<element name="title" type="string"></element>
+    		<element name="description" type="string" maxOccurs="1" minOccurs="0"></element>
+    		<element name="price" type="double"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="Drink">
+    	<complexContent>
+    		<extension base="tns:MenuItem">
+    			<sequence>
+    				<element name="alchohol" type="double" maxOccurs="1"
+    					minOccurs="0">
+    				</element>
+    				<element name="year" type="double" maxOccurs="1"
+    					minOccurs="0">
+    				</element>
+    				<element name="country" type="string" maxOccurs="1"
+    					minOccurs="0">
+    				</element>
+    				<element name="region" type="string" maxOccurs="1"
+    					minOccurs="0">
+    				</element>
+    				<element name="size" type="string"></element>
+    			</sequence>
+    		</extension>
+    	</complexContent>
+    </complexType>
+
+
+    <complexType name="OrderType">
+    	<sequence>
+    		<element name="lines" type="tns:OrderLine"
+    			maxOccurs="unbounded" minOccurs="1">
+    		</element>
+    		<element name="customer" type="tns:Customer" maxOccurs="1"
+    			minOccurs="1">
+    		</element>
+    		<element name="placementDate" type="dateTime" maxOccurs="1"
+    			minOccurs="1">
+    		</element>
+    		<element name="estimatedDate" type="dateTime"></element>
+    		<element name="active" type="boolean" maxOccurs="1"
+    			minOccurs="1">
+    		</element>
+    		<element name="collected" type="boolean" maxOccurs="1" minOccurs="1"></element>
+    	</sequence>
+    </complexType>
+    
+    <complexType name="OrderLine">
+    	<sequence>
+    		<element name="item" type="tns:MenuItem" maxOccurs="1"
+    			minOccurs="1">
+    		</element>
+    		<element name="additionalInformation" type="string"
+    			maxOccurs="1" minOccurs="0">
+    		</element>
+    		<element name="orderType" type="tns:OrderType" maxOccurs="1" minOccurs="1"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="Customer">
+    	<sequence>
+    		<element name="firstname" type="string"></element>
+    		<element name="surname" type="string"></element>
+    		<element name="address" type="string"></element>
+    		<element name="username" type="string"></element>
+    		<element name="password" type="string"></element>
+    		<element name="paymentMethods" type="string"></element>
+    		<element name="email" type="string"></element>
+    		<element name="facebook" type="string"></element>
+    		<element name="twitter" type="string"></element>
+    		<element name="orders" type="tns:OrderType"
+    			maxOccurs="unbounded" minOccurs="0">
+    		</element>
+    		<element name="currentGPSLocation" type="string"></element>
+    	</sequence>
+    </complexType>
+
+
+</schema>
