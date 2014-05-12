@@ -128,6 +128,17 @@ public class RooScriptGenerator
 	 */
 	private String xsdNsPrefix = "";
 	
+	/**
+	 * The target namespace prefix for the XSD schema
+	 */
+	private String targetNsPrefix = "";
+	
+	/**
+	 * The XSD schema document we load in for parsing
+	 */
+	private Document srcSchema;
+	
+	
 	
 	/**
 	 * Annotation to add to an element in a complex schema to indicate that it
@@ -338,14 +349,14 @@ public class RooScriptGenerator
 		rooUpdateScript.println("##########################################");
 
 		// Load in the doc
-		Document srcSchema = XMLDOMHelper.readFile(srcFile.getAbsolutePath());
+		srcSchema = XMLDOMHelper.readFile(srcFile.getAbsolutePath());
 		srcSchema.getRootElement().addNamespace("xs", XSD_NAMESPACE);
 
 		// Find the target namespace for this schema
 		DefaultAttribute targetNs = (DefaultAttribute) srcSchema.getRootElement().selectSingleNode("@targetNamespace");
 		DefaultAttribute xmlns = (DefaultAttribute) srcSchema.getRootElement().selectSingleNode("@xmlns");
 
-		String targetNsPrefix = "";
+		
 		List<Namespace> namespaces = srcSchema.getRootElement().declaredNamespaces();
 		for (Namespace ns : namespaces)
 		{
@@ -385,16 +396,19 @@ public class RooScriptGenerator
 		// Fetch all the complex types
 		// List<Node> complexTypes =
 		// srcSchema.selectNodes("//xs:complexType | //xs:simpleType");
-		List<Node> complexTypes = srcSchema.selectNodes("//xs:complexType");
+		//List<Node> complexTypes = srcSchema.selectNodes("//xs:complexType");
 
+		List<Node> entityElements = srcSchema.selectNodes(srcSchema.getUniquePath() + "/xs:element");
+						
 		Map<String, Element> inheritenceElements = new HashMap<String, Element>();
-
 		Map<String, List<RooField>> entities = new HashMap<String, List<RooField>>();
 
+		
+		
 		// Create the Roo entites
-		for (Node node : complexTypes)
+		for (Node entityNode : entityElements)
 		{
-			String nodeName = node.selectSingleNode("@name") == null ? "" : node.selectSingleNode("@name").getStringValue();
+			String nodeName = entityNode.selectSingleNode("@name") == null ? "" : entityNode.selectSingleNode("@name").getStringValue();
 
 			if (nodeName == null || nodeName.equals(""))
 				continue;
@@ -403,14 +417,14 @@ public class RooScriptGenerator
 
 			// Now find any elements in the node that reference other
 			// entities
-			List<Node> elements = node.selectNodes(node.getUniquePath() + "//xs:element");
+			List<Node> elements = entityNode.selectNodes(entityNode.getUniquePath() + "//xs:element");
 
 			// Lets build a map of all complex types by name, what
 			// elements they have, and their cardinality
 			List<RooField> containingElements = new ArrayList<RooField>();
 
 			// Inheritance
-			Node extensionNode = node.selectSingleNode(node.getUniquePath() + "//xs:extension");
+			Node extensionNode = entityNode.selectSingleNode(entityNode.getUniquePath() + "//xs:extension");
 			String extensionCommand = "";
 			if (extensionNode != null)
 			{
@@ -469,7 +483,7 @@ public class RooScriptGenerator
 
 				}*/
 				
-				RooField rooField = xsdElementToRooField(element);
+				RooField rooField = xsdElementToRooField(entityNode,element);
 
 				// Does the type have a prefix?
 				if( rooField.xsdType.contains(":") )
@@ -735,7 +749,7 @@ public class RooScriptGenerator
 		rooScript.println("########################");
 		rooScript.println("# Add Selenium Tests   #");
 		rooScript.println("########################");
-		for (Node node : complexTypes)
+		for (Node node : entityElements)
 		{
 			String nodeName = node.selectSingleNode("@name") == null ? "" : node.selectSingleNode("@name").getStringValue();
 
@@ -883,7 +897,7 @@ public class RooScriptGenerator
 	 * Converts an XSD element node that belongs to an entity to a Roo Field object
 	 * @return
 	 */
-	private RooField xsdElementToRooField( Node element )
+	private RooField xsdElementToRooField( Node entity, Node element )
 	{
 		RooField rooField = new RooField();
 		String elementName = element.selectSingleNode("@name") == null ? "" : element.selectSingleNode("@name").getStringValue();
@@ -921,6 +935,8 @@ public class RooScriptGenerator
 		// relationship		
 		String minOccurs = element.selectSingleNode("@minOccurs") == null ? "" : element.selectSingleNode("@minOccurs").getStringValue();
 		String maxOccurs = element.selectSingleNode("@maxOccurs") == null ? "" : element.selectSingleNode("@maxOccurs").getStringValue();
+		String defaultValue = element.selectSingleNode("@default") == null ? null : element.selectSingleNode("@default").getStringValue();
+		String documentation = element.selectSingleNode(element.getUniquePath() + "//*[name()='documentation']") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='documentation']").getStringValue().trim();
 		String regexp = element.selectSingleNode(element.getUniquePath() + "//*[name()='pattern']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='pattern']/@value").getStringValue();		
 		String minValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='minExclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='minExclusive']/@value").getStringValue() ; 
 		String maxValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='maxExclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='maxExclusive']/@value").getStringValue() ;
@@ -933,6 +949,10 @@ public class RooScriptGenerator
 		rooField.xsdType = type;
 		rooField.rooType = mapXsdTypeToRooType( type );
 		rooField.regexp = regexp;		
+		rooField.value = defaultValue;
+		rooField.comment = documentation;
+		if( isElementDefinedAsUnique( entity, element) )rooField.unique = true;
+		
 		if( minValue != null )
 		{
 			if( rooField.xsdType.equals("int") || rooField.xsdType.equals("integer") )
@@ -983,7 +1003,51 @@ public class RooScriptGenerator
 	}
 	
 	/**
+	 * Determines is a node within an entity has a unique definition
+	 * defined for it in the schema
+	 * @param element
+	 * @return
+	 */
+	private boolean isElementDefinedAsUnique( Node entity, Node element )
+	{
+		List<Node> uniqueNodes = entity.selectNodes("xs:unique");
+		for( Node uniqueNode : uniqueNodes )
+		{
+			Node selectorXpath = uniqueNode.selectSingleNode( "xs:selector/@xpath");
+			Node fieldXpath = uniqueNode.selectSingleNode("xs:field/@xpath");
+			if( selectorXpath != null && fieldXpath != null )
+			{
+				String selectorXpathStr = selectorXpath.getStringValue();
+				
+				/*
+				 * We expect the selector xpath to be prefixed with the target namespace
+				 * so that it references an element in this schema. If not we return false
+				 * 
+				 * @TODO: Culd relference other schema namespaces
+				 */
+				if( !selectorXpathStr.startsWith( targetNsPrefix + ":" ) )
+				{
+					return false;
+				}
+				selectorXpathStr = selectorXpathStr.split(":")[1];
+				
+				
+				Node selectedNode = srcSchema.selectSingleNode("//xs:element[./@name='" + selectorXpathStr + "']");
+				if( entity.equals(selectedNode) )
+				{
+					Node fieldNode = selectedNode.selectSingleNode(fieldXpath.getStringValue());
+					return element.equals(fieldNode);
+				}
+			}
+		}
+		return false;
+	}
+	
+	/**
 	 * Takes an xsd type and maps it to a roo entity field type
+	 * 
+	 * @TODO: Dont think this works in all variations of unique definitions. Needs
+	 * more testing with other schemas
 	 * 
 	 * @return
 	 */

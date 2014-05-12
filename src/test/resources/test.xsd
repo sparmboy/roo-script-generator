@@ -1,41 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.example.org/test" xmlns:tns="http://www.example.org/test" elementFormDefault="qualified">
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.example.org/test"
+	xmlns:tns="http://www.example.org/test" elementFormDefault="qualified">
 
-    <complexType name="Person">
-    	<sequence>
-    		<element name="name">
-    			<simpleType>
-    				<restriction base="string">
-    					<minLength value="2"></minLength>
-    					<maxLength value="50"></maxLength>
-    				</restriction>
-    			</simpleType>
-    		</element>
-    		<element name="age" maxOccurs="1" minOccurs="1">
-    			<simpleType>
-    				<restriction base="integer">
-    					<minExclusive value="0"></minExclusive>
-    					<maxExclusive value="200"></maxExclusive>
-    				</restriction>
-    			</simpleType>
-    		</element>
-    		<element name="percentage">
-    			<simpleType>
-    				<restriction base="double">
-    					<minExclusive value="0.0"></minExclusive>
-    					<maxExclusive value="100.0"></maxExclusive>
-    				</restriction>
-    			</simpleType>
-    		</element>
-    		<element name="email">
-    			<simpleType>
-    				<restriction base="string">
-    					<pattern
-    						value="[a-z0-9!#$%&amp;'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&amp;'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?">
-    					</pattern>
-    				</restriction>
-    			</simpleType>
-    		</element>
-    	</sequence>
-    </complexType>
+	<element name="Person">
+		<complexType>
+			<sequence>
+				<element name="name">
+					<annotation>
+						<documentation>
+							This is the first name of the person
+						</documentation>
+					</annotation>
+					<simpleType>
+						<restriction base="string">
+							<minLength value="2"></minLength>
+							<maxLength value="50"></maxLength>
+						</restriction>
+					</simpleType>
+				</element>
+				<element name="surname" type="string" default="Jones"></element>
+				<element name="age" maxOccurs="1" minOccurs="1">
+					<simpleType>
+						<restriction base="integer">
+							<minExclusive value="0"></minExclusive>
+							<maxExclusive value="200"></maxExclusive>
+						</restriction>
+					</simpleType>
+				</element>
+				<element name="percentage">
+					<simpleType>
+						<restriction base="double">
+							<minExclusive value="0.0"></minExclusive>
+							<maxExclusive value="100.0"></maxExclusive>
+						</restriction>
+					</simpleType>
+				</element>
+				<element name="email">
+					<simpleType>
+						<restriction base="string">
+							<pattern
+								value="[a-z0-9!#$%&amp;'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&amp;'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?">
+							</pattern>
+						</restriction>
+					</simpleType>
+				</element>
+				<complexType>
+					<attribute name="username" type="string"></attribute>
+				</complexType>
+				<element name="username" type="string"></element>
+			</sequence>
+		</complexType>
+		<unique name="uniqueFirstName">
+			<selector xpath="tns:Person" />
+			<field xpath="//xs:element[./@name='username']" />
+		</unique>
+	</element>
 </schema>

@@ -135,6 +135,7 @@ public class RooField
 				(decimalMax != null ? "--decimalMax " + decimalMax + " " : "") +
 				(tranzient != null && tranzient == true ? "--transient " : "") +
 				(value != null ? "--value " + value + " " : "") +
+				(comment != null ? "--comment \"" + comment + "\" " : "") +
 				(lob != null ? "--lob " : "");
 		
 		

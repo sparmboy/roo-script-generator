@@ -135,18 +135,49 @@ public class RooScriptGeneratorIntegrationTest
 	}
 	
 	@Test
+	public void testUnique() throws Exception
+	{
+		logger.info("Connecting to base URL " + BASE_URL );		
+		String url = BASE_URL + "/people";		
+		String driverJson = "{'name':'Jimmy','age':34,username:'jimbob69'}";
+		
+		// Create
+		String newUrl = createJson(url, driverJson).toString();
+		assertNotNull( newUrl );
+		
+		// Create duplicate
+		createJson(url, driverJson, HttpStatus.SC_INTERNAL_SERVER_ERROR, "integrity constraint violation: unique constraint or index violation;");
+		
+		// Delete
+		delete(newUrl);
+		
+		// Create
+		newUrl = createJson(url, driverJson).toString();
+		assertNotNull( newUrl );
+
+		// cleanup
+		delete(newUrl);
+	}
+	
+	/**
+	 * @throws Exception
+	 */
+	/**
+	 * @throws Exception
+	 */
+	@Test
 	public void testCreatePerson() throws Exception
 	{
 		logger.info("Connecting to base URL " + BASE_URL );		
 		String url = BASE_URL + "/people";		
-		String driverJson = "{'name':'Spencer','age':34}";
+		String driverJson = "{'name':'Scott','age':34}";
 		
 		// Create
 		String newUrl = createJson(url, driverJson).toString();
          
         // Fetch
 		String json = fetchJson(newUrl);
-		assertTrue("Person not doesnt contain firstname",json.contains("\"name\":\"Spencer\""));
+		assertTrue("Person not doesnt contain firstname",json.contains("\"name\":\"Scott\""));
 		
 		// Delete
 		delete(newUrl);
