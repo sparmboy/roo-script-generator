@@ -170,7 +170,7 @@
 							<workingDirectory>target</workingDirectory>
 							<executable>mvn</executable>
 							<arguments>
-								<argument>org.apache.tomcat.maven:tomcat7-maven-plugin:2.1:run-war</argument>
+								<argument>org.apache.tomcat.maven:tomcat7-maven-plugin:2.2:run-war</argument>
 								<argument>-Dmaven.tomcat.port=8077</argument>
 								<argument>-Dmaven.tomcat.fork=false</argument>
 							</arguments>
@@ -187,16 +187,18 @@
 							<workingDirectory>target</workingDirectory>
 							<executable>mvn</executable>
 							<arguments>
-								<argument>org.apache.tomcat.maven:tomcat7-maven-plugin:2.1:shutdown</argument>
+								<argument>org.apache.tomcat.maven:tomcat7-maven-plugin:2.2:shutdown</argument>
 								<argument>-Dmaven.tomcat.port=8077</argument>
 								<argument>-Dmaven.tomcat.fork=true</argument>
 							</arguments>
 						</configuration>
-					</execution>
+					</execution> 
 
 
 				</executions>
 			</plugin>
+
+
 
 			<!-- startup and shutdown a tomcat instance of the app for integration 
 				tests -->

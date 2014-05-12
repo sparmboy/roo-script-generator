@@ -44,6 +44,41 @@ public class RooScriptGeneratorIntegrationTest
 	public final static String BASE_URL = "http://localhost:8077/test";
 
 	@Test
+	public void testRegex() throws Exception
+	{
+		logger.info("Connecting to base URL " + BASE_URL );		
+		String url = BASE_URL + "/people";		
+		String driverJson = "{'name':'Spencer',age:34,email:'spencer'}";
+		
+		// Create
+		createJson(url, driverJson, HttpStatus.SC_INTERNAL_SERVER_ERROR, "propertyPath=email, rootBeanClass=class org.example.test.Person, messageTemplate='{javax.validation.constraints.Pattern.message}");
+	}
+
+	
+	@Test
+	public void testMinLengthField() throws Exception
+	{
+		logger.info("Connecting to base URL " + BASE_URL );		
+		String url = BASE_URL + "/people";		
+		String driverJson = "{'name':'A',age:34}";
+		
+		// Create
+		createJson(url, driverJson, HttpStatus.SC_INTERNAL_SERVER_ERROR, "'size must be between 2 and 50', propertyPath=name");
+	}
+
+	@Test
+	public void testMaxLengthField() throws Exception
+	{
+		logger.info("Connecting to base URL " + BASE_URL );		
+		String url = BASE_URL + "/people";		
+		String driverJson = "{'name':'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',age:3000}";
+		
+		// Create
+		createJson(url, driverJson, HttpStatus.SC_INTERNAL_SERVER_ERROR, "'size must be between 2 and 50', propertyPath=name");
+	}
+
+	
+	@Test
 	public void testMinSizeField() throws Exception
 	{
 		logger.info("Connecting to base URL " + BASE_URL );		
@@ -63,6 +98,28 @@ public class RooScriptGeneratorIntegrationTest
 		
 		// Create
 		createJson(url, driverJson, HttpStatus.SC_INTERNAL_SERVER_ERROR, "'must be less than or equal to 200', propertyPath=age");
+	}
+
+	@Test
+	public void testMinSizeDoubleField() throws Exception
+	{
+		logger.info("Connecting to base URL " + BASE_URL );		
+		String url = BASE_URL + "/people";		
+		String driverJson = "{'name':'Spencer',age:43,percentage:-300.5}";
+		
+		// Create
+		createJson(url, driverJson, HttpStatus.SC_INTERNAL_SERVER_ERROR, "'must be greater than or equal to 0.0', propertyPath=percentage");
+	}
+
+	@Test
+	public void testMaxSizeDoubleField() throws Exception
+	{
+		logger.info("Connecting to base URL " + BASE_URL );		
+		String url = BASE_URL + "/people";		
+		String driverJson = "{'name':'Spencer',age:34,'percentage':300.5}";
+		
+		// Create
+		createJson(url, driverJson, HttpStatus.SC_INTERNAL_SERVER_ERROR, "'must be less than or equal to 100.0', propertyPath=percentage");
 	}
 
 	

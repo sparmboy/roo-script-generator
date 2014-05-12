@@ -892,7 +892,7 @@ public class RooScriptGenerator
 		// If type is not specified as an attribute we need to determine it is a simple type with a restriction
 		if( type.equals("") )
 		{
-			Node typeNode = element.selectSingleNode("//@base");  
+			Node typeNode = element.selectSingleNode(element.getUniquePath() + "//@base");  
 			if( typeNode == null )
 			{
 				throw new RuntimeException("Could not determine type of element " + elementName + ". Element=[" + element + "]");
@@ -921,16 +921,36 @@ public class RooScriptGenerator
 		// relationship		
 		String minOccurs = element.selectSingleNode("@minOccurs") == null ? "" : element.selectSingleNode("@minOccurs").getStringValue();
 		String maxOccurs = element.selectSingleNode("@maxOccurs") == null ? "" : element.selectSingleNode("@maxOccurs").getStringValue();
-		String regexp = element.selectSingleNode("//pattern/@value") == null ? null : element.selectSingleNode("//pattern[@value]").getStringValue();		
+		String regexp = element.selectSingleNode(element.getUniquePath() + "//*[name()='pattern']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='pattern']/@value").getStringValue();		
 		String minValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='minExclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='minExclusive']/@value").getStringValue() ; 
 		String maxValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='maxExclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='maxExclusive']/@value").getStringValue() ;
+		String minLength = element.selectSingleNode(element.getUniquePath() + "//*[name()='minLength']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='minLength']/@value").getStringValue() ; 
+		String maxLength = element.selectSingleNode(element.getUniquePath() + "//*[name()='maxLength']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='maxLength']/@value").getStringValue() ;
+		
+		
 		
 		rooField.fieldName = convertReservedWords( elementName );
 		rooField.xsdType = type;
 		rooField.rooType = mapXsdTypeToRooType( type );
 		rooField.regexp = regexp;		
-		if( minValue != null )rooField.min = Integer.parseInt(minValue);
-		if( maxValue != null )rooField.max = Integer.parseInt(maxValue);
+		if( minValue != null )
+		{
+			if( rooField.xsdType.equals("int") || rooField.xsdType.equals("integer") )
+				rooField.min = Integer.parseInt(minValue);
+			if( rooField.xsdType.equals("double") || rooField.xsdType.equals("decimal") )
+				rooField.decimalMin = Double.parseDouble(minValue);
+
+		}
+		if( maxValue != null )
+		{
+			if( rooField.xsdType.equals("int") || rooField.xsdType.equals("integer") )
+				rooField.max = Integer.parseInt(maxValue);
+			if( rooField.xsdType.equals("double") || rooField.xsdType.equals("decimal") )
+				rooField.decimalMax = Double.parseDouble(maxValue);
+			
+		}
+		if( minLength != null )rooField.sizeMin = Integer.parseInt(minLength);
+		if( maxLength != null )rooField.sizeMax = Integer.parseInt(maxLength);
 		
 		// TODO: Add other xsd properties
 		

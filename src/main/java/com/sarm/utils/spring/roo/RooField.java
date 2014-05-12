@@ -131,6 +131,8 @@ public class RooField
 				(sizeMax != null ? "--sizeMax " + sizeMax + " " : "") +
 				(min != null ? "--min " + min + " " : "") +
 				(max != null ? "--max " + max + " " : "") +
+				(decimalMin != null ? "--decimalMin " + decimalMin + " " : "") +
+				(decimalMax != null ? "--decimalMax " + decimalMax + " " : "") +
 				(tranzient != null && tranzient == true ? "--transient " : "") +
 				(value != null ? "--value " + value + " " : "") +
 				(lob != null ? "--lob " : "");
