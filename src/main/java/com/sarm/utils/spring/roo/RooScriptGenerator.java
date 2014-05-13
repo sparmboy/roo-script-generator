@@ -1070,7 +1070,7 @@ public class RooScriptGenerator
 		// Specify command line options
 		Options options = new Options();
 		Option xsdOption = new Option(XSD_FILE_OPTION, true, "The XSD file to be parsed");
-		Option targetFileOption = new Option(XSD_FILE_OPTION, true, "The XSD to be parsed");
+		Option targetFileOption = new Option(TARGET_FILE_OPTION, true, "The target file to write the roo script to");
 		Option databaseTypeOption = new Option(DATABASE_TYPE_OPTION, true, "The type of database to be used for persisting the entities in the RESTful service. Default is " + DEFAULT_DATABASE_TYPE + ". Valid options are " + Arrays.asList( DATATBASE_TYPE.values() ) );
 		
 		xsdOption.setRequired(true);
@@ -1097,7 +1097,12 @@ public class RooScriptGenerator
 			RooScriptGenerator generator = new RooScriptGenerator();
 			generator.setSrcFile(new File(cl.getOptionValue(XSD_FILE_OPTION)));
 			generator.setTargetFilename(new File(cl.getOptionValue(TARGET_FILE_OPTION)));
-			generator.setDatabaseType( DATATBASE_TYPE.valueOf( cl.getOptionValue(DATABASE_TYPE_OPTION) ) );
+			
+			// Optional parameters
+			if( cl.hasOption(DATABASE_TYPE_OPTION) )
+			{
+				generator.setDatabaseType( DATATBASE_TYPE.valueOf( cl.getOptionValue(DATABASE_TYPE_OPTION) ) );
+			}
 			
 			generator.generateScript();
 		}
