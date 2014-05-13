@@ -1,21 +1,24 @@
 package com.sarm.utils.spring.roo;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.dom4j.Document;
-import org.dom4j.Element;
 import org.dom4j.Namespace;
 import org.dom4j.Node;
-import org.dom4j.QName;
 import org.dom4j.tree.DefaultAttribute;
-import org.dom4j.tree.FlyweightComment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.roo.model.ReservedWords;
@@ -44,6 +47,10 @@ public class RooScriptGenerator
 
 	private Logger logger = LoggerFactory.getLogger(RooScriptGenerator.class);
 
+	public final static String XSD_FILE_OPTION = "xsdFile";
+	public final static String TARGET_FILE_OPTION = "targetFile";
+	public final static String DATABASE_TYPE_OPTION = "databaseType";
+	
 	/**
 	 * The start of a http protocol in a namespace
 	 */
@@ -63,11 +70,6 @@ public class RooScriptGenerator
 	 * Roo command to create an entity
 	 */
 	private final static String ROO_CREATE_ENTITY = "entity jpa --class %%PACKAGE%%%%ENTITY%% --activeRecord %%ACTIVE_RECORD%% --testAutomatically";
-
-	/**
-	 * Roo command to to add a field to an entity
-	 */
-	private final static String ROO_CREATE_FIELD = "field %%TYPE%% --fieldName %%FIELD_NAME%% --class %%PACKAGE%%%%ENTITY%%";
 
 	/**
 	 * Roo command to to add a many to many relationship
@@ -105,9 +107,6 @@ public class RooScriptGenerator
 	 * Roo command to create an entity repository
 	 */
 	private final static String ROO_CREATE_REPO = "repository jpa --interface ";
-
-	private final static String[] ROO_WEB_SETUP_CMNDS =
-	{ "web mvc json all --package %%PACKAGE%%" };
 
 	private final static String PACKAGE_TAG = "%%PACKAGE%%";
 
@@ -192,16 +191,6 @@ public class RooScriptGenerator
 	}
 
 	/**
-	 * Specifies the file pattern to use to search for files
-	 */
-	private String filePattern = ".*xsd";
-
-	public void setFilePattern(String filePattern)
-	{
-		this.filePattern = filePattern;
-	}
-
-	/**
 	 * Specifies the target roo script file
 	 */
 	private File targetFile;
@@ -247,10 +236,6 @@ public class RooScriptGenerator
 	// ==================== XSD DEFINITIONS =================================
 
 	private final static String UNBOUNDED = "unbounded";
-
-	private final static String SIMPLE_TYPE = "simpleType";
-
-	private final static String COMPLEX_TYPE = "complexType";
 
 	public final static String XSD_NAMESPACE = "http://www.w3.org/2001/XMLSchema";
 
@@ -399,11 +384,7 @@ public class RooScriptGenerator
 		//List<Node> complexTypes = srcSchema.selectNodes("//xs:complexType");
 
 		List<Node> entityElements = srcSchema.selectNodes(srcSchema.getUniquePath() + "/xs:element");
-						
-		Map<String, Element> inheritenceElements = new HashMap<String, Element>();
 		Map<String, List<RooField>> entities = new HashMap<String, List<RooField>>();
-
-		
 		
 		// Create the Roo entites
 		for (Node entityNode : entityElements)
@@ -451,38 +432,7 @@ public class RooScriptGenerator
 			// First iteration to extract OneToMany
 			for (Node element : elements)
 			{
-				/*String elementName = element.selectSingleNode("@name") == null ? "" : element.selectSingleNode("@name").getStringValue();
-				String type = element.selectSingleNode("@type") == null ? "" : element.selectSingleNode("@type").getStringValue();
 
-				// If type is not specified as an attribute we need to determine it is a simple type with a restriction
-				if( type.equals("") )
-				{
-					Node typeNode = element.selectSingleNode("//@base");  
-					if( typeNode == null )
-					{
-						throw new Exception("Could not determine type of element " + elementName + " in entity " + nodeName + ". Element=[" + element + "]");
-					}
-					else
-					{
-						type = typeNode.getStringValue();
-					}
-				}
-				
-				boolean isUnique = false;
-				
-				// Check if the element has been annotated with a
-				// special "KEY" to denote it is a key element for
-				// hibernate
-				if (element.hasContent())
-				{
-					Node anon = element.selectSingleNode(element.getUniquePath() + "//xs:documentation");
-					if (anon != null && anon.getText().toLowerCase().contains(HIBERNATE_KEY_ANOTATION.toLowerCase()))
-					{
-						isUnique = true;
-					}
-
-				}*/
-				
 				RooField rooField = xsdElementToRooField(entityNode,element);
 
 				// Does the type have a prefix?
@@ -509,21 +459,10 @@ public class RooScriptGenerator
 						rooField.owningEntity = entityPackageName + nodeName;
 						rooScript.println( rooField.toString() );
 						rooUpdateScript.println( rooField.toString() );
-
-						
-/*						String rooType = mapXsdTypeToRooType(type);
-
-						String fieldName = convertReservedWords(elementName);
-
-						// Write script entries to create the entities
-						rooScript.println(ROO_CREATE_FIELD.replace(PACKAGE_TAG, entityPackageName).replace(ENTITY_TAG, nodeName).replace(TYPE_TAG, rooType).replace(FIELD_NAME_TAG, fieldName));
-						rooUpdateScript.println(ROO_CREATE_FIELD.replace(PACKAGE_TAG, entityPackageName).replace(ENTITY_TAG, nodeName).replace(TYPE_TAG, rooType).replace(FIELD_NAME_TAG, fieldName) + (isUnique?" --unique":""));
-*/					}
-
+					}
 				}
 				else
 				{
-					//addContainingElements(element, elementName, type, containingElements);
 					containingElements.add(rooField);
 				}
 				
@@ -593,8 +532,6 @@ public class RooScriptGenerator
 						referredCardinality = referredElementDetails.cardinality.toString();
 					}
 				}
-
-				String targetEntity = extractPackageFromNamespace(targetNs.getStringValue()) + elementType;
 
 				// ONE TO MANY
 				if (cardinality.equals(CARDINALITY.UNBOUNDED.toString()) || cardinality.equals(CARDINALITY.ONE_OR_MORE.toString()))
@@ -847,61 +784,24 @@ public class RooScriptGenerator
 	}
 	
 	/**
-	 * Adds an element to the collection of elements that reference other elements including the cardinality
-	 * 
-	 * @param element
-	 * @param elementName
-	 * @param type
-	 * @param containingElements
-	 */
-	private void addContainingElements_OLD(Node element, String elementName, String type, List<RooField> containingElements)
-	{
-		// If so get the multiplicity so we know the
-		// relationship
-		String minOccurs = element.selectSingleNode("@minOccurs") == null ? "" : element.selectSingleNode("@minOccurs").getStringValue();
-		String maxOccurs = element.selectSingleNode("@maxOccurs") == null ? "" : element.selectSingleNode("@maxOccurs").getStringValue();
-
-		RooField field = new RooField();
-		field.fieldName = elementName;
-		field.xsdType = type;
-		field.rooType = mapXsdTypeToRooType( type );
-		
-		// TODO: Add other xsd properties
-		
-		if (minOccurs.equals("0") && maxOccurs.equals("1"))
-		{
-			field.cardinality = CARDINALITY.OPTIONAL;
-		} 
-		else if (minOccurs.equals("1") && maxOccurs.equals("1"))
-		{
-			field.cardinality =  CARDINALITY.MANDATORY;
-		} 
-		else if (minOccurs.equals("0") && maxOccurs.equalsIgnoreCase(UNBOUNDED))
-		{
-			field.cardinality =  CARDINALITY.UNBOUNDED;
-		} 
-		else if (minOccurs.equals("1") && maxOccurs.equalsIgnoreCase(UNBOUNDED))
-		{
-			field.cardinality =  CARDINALITY.ONE_OR_MORE;
-		} 
-		else
-		{
-			field.cardinality =  CARDINALITY.NONE;
-		}
-
-		
-		containingElements.add( field );
-	}
-	
-	/**
 	 * Converts an XSD element node that belongs to an entity to a Roo Field object
 	 * @return
 	 */
 	private RooField xsdElementToRooField( Node entity, Node element )
 	{
 		RooField rooField = new RooField();
+
 		String elementName = element.selectSingleNode("@name") == null ? "" : element.selectSingleNode("@name").getStringValue();
 		String type = element.selectSingleNode("@type") == null ? "" : element.selectSingleNode("@type").getStringValue();
+		String minOccurs = element.selectSingleNode("@minOccurs") == null ? "" : element.selectSingleNode("@minOccurs").getStringValue();
+		String maxOccurs = element.selectSingleNode("@maxOccurs") == null ? "" : element.selectSingleNode("@maxOccurs").getStringValue();
+		String defaultValue = element.selectSingleNode("@default") == null ? null : element.selectSingleNode("@default").getStringValue();
+		String documentation = element.selectSingleNode(element.getUniquePath() + "//*[name()='documentation']") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='documentation']").getStringValue().trim();
+		String regexp = element.selectSingleNode(element.getUniquePath() + "//*[name()='pattern']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='pattern']/@value").getStringValue();		
+		String minValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='minExclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='minExclusive']/@value").getStringValue() ; 
+		String maxValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='maxExclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='maxExclusive']/@value").getStringValue() ;
+		String minLength = element.selectSingleNode(element.getUniquePath() + "//*[name()='minLength']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='minLength']/@value").getStringValue() ; 
+		String maxLength = element.selectSingleNode(element.getUniquePath() + "//*[name()='maxLength']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='maxLength']/@value").getStringValue() ;
 
 		// If type is not specified as an attribute we need to determine it is a simple type with a restriction
 		if( type.equals("") )
@@ -931,17 +831,6 @@ public class RooScriptGenerator
 		}
 
 		
-		// Get the multiplicity so we know the
-		// relationship		
-		String minOccurs = element.selectSingleNode("@minOccurs") == null ? "" : element.selectSingleNode("@minOccurs").getStringValue();
-		String maxOccurs = element.selectSingleNode("@maxOccurs") == null ? "" : element.selectSingleNode("@maxOccurs").getStringValue();
-		String defaultValue = element.selectSingleNode("@default") == null ? null : element.selectSingleNode("@default").getStringValue();
-		String documentation = element.selectSingleNode(element.getUniquePath() + "//*[name()='documentation']") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='documentation']").getStringValue().trim();
-		String regexp = element.selectSingleNode(element.getUniquePath() + "//*[name()='pattern']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='pattern']/@value").getStringValue();		
-		String minValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='minExclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='minExclusive']/@value").getStringValue() ; 
-		String maxValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='maxExclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='maxExclusive']/@value").getStringValue() ;
-		String minLength = element.selectSingleNode(element.getUniquePath() + "//*[name()='minLength']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='minLength']/@value").getStringValue() ; 
-		String maxLength = element.selectSingleNode(element.getUniquePath() + "//*[name()='maxLength']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='maxLength']/@value").getStringValue() ;
 		
 		
 		
@@ -971,8 +860,6 @@ public class RooScriptGenerator
 		}
 		if( minLength != null )rooField.sizeMin = Integer.parseInt(minLength);
 		if( maxLength != null )rooField.sizeMax = Integer.parseInt(maxLength);
-		
-		// TODO: Add other xsd properties
 		
 		if (minOccurs.equals("0") && maxOccurs.equals("1"))
 		{
@@ -1178,8 +1065,52 @@ public class RooScriptGenerator
 		return name;
 	}
 
-	public final static void main(String[] args) throws Exception
+	public final static void main(String[] args) throws Exception 
 	{
+		// Specify command line options
+		Options options = new Options();
+		Option xsdOption = new Option(XSD_FILE_OPTION, true, "The XSD file to be parsed");
+		Option targetFileOption = new Option(XSD_FILE_OPTION, true, "The XSD to be parsed");
+		Option databaseTypeOption = new Option(DATABASE_TYPE_OPTION, true, "The type of database to be used for persisting the entities in the RESTful service. Default is " + DEFAULT_DATABASE_TYPE + ". Valid options are " + Arrays.asList( DATATBASE_TYPE.values() ) );
 		
+		xsdOption.setRequired(true);
+		targetFileOption.setRequired(true);
+		databaseTypeOption.setRequired(false);
+		
+		options.addOption( xsdOption );
+		options.addOption(targetFileOption);
+		options.addOption(databaseTypeOption);
+		
+		// Parse
+		BasicParser parser = new BasicParser();
+		try
+		{
+			CommandLine cl = parser.parse(options, args);
+			
+			if ( cl.hasOption('h') ) 
+			{
+			    showUsage(options);
+			    System.exit(0);
+			}
+		
+			// Configure the generator
+			RooScriptGenerator generator = new RooScriptGenerator();
+			generator.setSrcFile(new File(cl.getOptionValue(XSD_FILE_OPTION)));
+			generator.setTargetFilename(new File(cl.getOptionValue(TARGET_FILE_OPTION)));
+			generator.setDatabaseType( DATATBASE_TYPE.valueOf( cl.getOptionValue(DATABASE_TYPE_OPTION) ) );
+			
+			generator.generateScript();
+		}
+		catch (ParseException e)
+		{
+			showUsage(options);
+			System.exit(0);
+		}
+	}
+	
+	public static void  showUsage( Options options )
+	{
+		HelpFormatter f = new HelpFormatter();
+	    f.printHelp("A utility that parses an XSD file defining your entity domains and generates a roo file which builds RESTful webservice for your entities using Spring Roo:", options);
 	}
 }

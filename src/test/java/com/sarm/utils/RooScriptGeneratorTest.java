@@ -4,6 +4,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
+import junitx.framework.FileAssert;
+
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -51,8 +53,8 @@ public class RooScriptGeneratorTest
 		assertTrue("Target roo file not generated",targetRooFile.exists());
 		assertTrue("Target roo update file not generated",targetRooFile.exists());
 
-		//FileAssert.assertEquals("Roo file not as expected",expectedRooFile, targetRooFile);
-		//FileAssert.assertEquals("Roo update file not as expected",expectedUpdateFile, targetUpdateFile);
+		FileAssert.assertEquals("Roo file not as expected",expectedRooFile, targetRooFile);
+		FileAssert.assertEquals("Roo update file not as expected",expectedUpdateFile, targetUpdateFile);
 		
 	}
 
