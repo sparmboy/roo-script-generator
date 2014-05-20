@@ -12,30 +12,6 @@
 entity jpa --class org.example.test.Person --activeRecord false --testAutomatically
 repository jpa --interface org.example.test.PersonRepository --entity org.example.test.Person
 
-# name
-entity jpa --class org.example.test.name --activeRecord false --testAutomatically
-repository jpa --interface org.example.test.nameRepository --entity org.example.test.name
-
-# surname
-entity jpa --class org.example.test.surname --activeRecord false --testAutomatically
-repository jpa --interface org.example.test.surnameRepository --entity org.example.test.surname
-
-# age
-entity jpa --class org.example.test.age --activeRecord false --testAutomatically
-repository jpa --interface org.example.test.ageRepository --entity org.example.test.age
-
-# percentage
-entity jpa --class org.example.test.percentage --activeRecord false --testAutomatically
-repository jpa --interface org.example.test.percentageRepository --entity org.example.test.percentage
-
-# email
-entity jpa --class org.example.test.email --activeRecord false --testAutomatically
-repository jpa --interface org.example.test.emailRepository --entity org.example.test.email
-
-# username
-entity jpa --class org.example.test.username --activeRecord false --testAutomatically
-repository jpa --interface org.example.test.usernameRepository --entity org.example.test.username
-
 ########################
 # Entity Relationships #
 ########################

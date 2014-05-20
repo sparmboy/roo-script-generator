@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -381,9 +382,12 @@ public class RooScriptGenerator
 		// Fetch all the complex types
 		// List<Node> complexTypes =
 		// srcSchema.selectNodes("//xs:complexType | //xs:simpleType");
-		//List<Node> complexTypes = srcSchema.selectNodes("//xs:complexType");
-
-		List<Node> entityElements = srcSchema.selectNodes(srcSchema.getUniquePath() + "/xs:element");
+		List<Node> complexTypeNodes= srcSchema.getRootElement().selectNodes("xs:complexType");
+		List<Node> elementNodes = srcSchema.getRootElement().selectNodes("xs:element");
+		
+		List<Node> entityElements = new ArrayList<Node>(complexTypeNodes);
+		entityElements.addAll(elementNodes);
+		
 		Map<String, List<RooField>> entities = new HashMap<String, List<RooField>>();
 		
 		// Create the Roo entites
@@ -456,7 +460,7 @@ public class RooScriptGenerator
 					else
 					{
 
-						rooField.owningEntity = entityPackageName + nodeName;
+						rooField.owningEntity = entityPackageName + convertReservedWords( nodeName );
 						rooScript.println( rooField.toString() );
 						rooUpdateScript.println( rooField.toString() );
 					}
@@ -654,7 +658,7 @@ public class RooScriptGenerator
 					// Then it must be a simple type
 					else
 					{
-						rooField.owningEntity = entityPackageName + entityName;
+						rooField.owningEntity = entityPackageName + convertReservedWords( entityName );
 
 						// Write script entries to create the entities
 						//rooScript.println(ROO_CREATE_FIELD.replace(PACKAGE_TAG, entityPackageName).replace(ENTITY_TAG, entityName).replace(TYPE_TAG, rooType).replace(FIELD_NAME_TAG, fieldName));
