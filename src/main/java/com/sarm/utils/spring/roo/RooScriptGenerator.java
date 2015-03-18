@@ -51,6 +51,9 @@ public class RooScriptGenerator
 	public final static String XSD_FILE_OPTION = "xsdFile";
 	public final static String TARGET_FILE_OPTION = "targetFile";
 	public final static String DATABASE_TYPE_OPTION = "databaseType";
+	public final static String WEB_TIER_OPTION = "enableWebTier";
+	public final static String SELENIUM_TESTS_OPTION = "enableSeleniumTests";
+	public final static String JSON_ONLY_OPTION = "jsonOnly";
 	
 	/**
 	 * The start of a http protocol in a namespace
@@ -211,6 +214,39 @@ public class RooScriptGenerator
 	 * 
 	 */
 	private boolean activeRecordStyle;
+	
+	
+	/**
+	 * If enabled, the web tier will only be created for JSON only, otherwise a full Scafold MVC tier
+	 * will be generated  
+	 */
+	private boolean jsonOnly = true;
+	
+	/**
+	 * @return the jsonOnly
+	 */
+	public boolean isJsonOnly()
+	{
+		return jsonOnly;
+	}
+
+	/**
+	 * @param jsonOnly the jsonOnly to set
+	 */
+	public void setJsonOnly(boolean jsonOnly)
+	{
+		this.jsonOnly = jsonOnly;
+	}
+
+	/**
+	 * If enabled, commands will be added to the roo script to generate a web tier
+	 */
+	private boolean generateWebTier = true;
+
+	/**
+	 * If enabled, commands will be added to the roo script to generate selenium tests
+	 */
+	private boolean generateSeleniumTests = true;
 
 	/**
 	 * @return the activeRecordStyle
@@ -673,39 +709,58 @@ public class RooScriptGenerator
 			}
 		}
 
-		rooScript.println("");
-		rooScript.println("########################");
-		rooScript.println("# Web Tier	       #");
-		rooScript.println("########################");
-		rooScript.println("json all");			
-		rooScript.println("web mvc json setup");
-		rooScript.println("web mvc json all --package " + entityPackageName.substring(0, entityPackageName.length() - 1));
-
-		rooUpdateScript.println("");
-		rooUpdateScript.println("json all");
-		rooUpdateScript.println("");
-		
-		// Add selenium tests
-		rooScript.println("");
-		rooScript.println("########################");
-		rooScript.println("# Add Selenium Tests   #");
-		rooScript.println("########################");
-		for (Node node : entityElements)
+		if( generateWebTier )
 		{
-			String nodeName = node.selectSingleNode("@name") == null ? "" : node.selectSingleNode("@name").getStringValue();
-
-			if (nodeName == null || nodeName.equals(""))
-				continue;
-
-			String newEntityName = convertReservedWords(nodeName);
-
-			rooScript.println(ROO_CREATE_SELENIUM_TEST.replace(PACKAGE_TAG, entityPackageName).replace(ENTITY_TAG, newEntityName));
-
+			rooScript.println("");
+			rooScript.println("########################");
+			rooScript.println("# Web Tier	       #");
+			rooScript.println("########################");
+			rooScript.println("json all");			
+			
+			if( jsonOnly )
+			{
+				rooScript.println("web mvc json setup");
+				rooScript.println("web mvc json all --package " + entityPackageName.substring(0, entityPackageName.length() - 1));
+			}
+			else
+			{
+				rooScript.println("web mvc setup");
+				rooScript.println("web mvc all --package " + entityPackageName.substring(0, entityPackageName.length() - 1));				
+			}
+			
+			rooUpdateScript.println("");
+			rooUpdateScript.println("json all");
+			//rooUpdateScript.println("web mvc json setup");
+			//rooUpdateScript.println("web mvc json all --package " + entityPackageName.substring(0, entityPackageName.length() - 1));
+			rooUpdateScript.println("");
 		}
-
+		
+		if( generateSeleniumTests )
+		{
+			// Add selenium tests
+			rooScript.println("");
+			rooScript.println("########################");
+			rooScript.println("# Add Selenium Tests   #");
+			rooScript.println("########################");
+			for (Node node : entityElements)
+			{
+				String nodeName = node.selectSingleNode("@name") == null ? "" : node.selectSingleNode("@name").getStringValue();
+	
+				if (nodeName == null || nodeName.equals(""))
+					continue;
+	
+				String newEntityName = convertReservedWords(nodeName);
+	
+				rooScript.println(ROO_CREATE_SELENIUM_TEST.replace(PACKAGE_TAG, entityPackageName).replace(ENTITY_TAG, newEntityName));
+				rooUpdateScript.println(ROO_CREATE_SELENIUM_TEST.replace(PACKAGE_TAG, entityPackageName).replace(ENTITY_TAG, newEntityName));
+			}
+		}
+		
 		// close the file and we're done
 		rooScript.close();
 		rooUpdateScript.close();
+		
+		System.out.println("Successfully created roo scripts in " + targetDirFile );
 	}
 	
 	/**
@@ -804,6 +859,17 @@ public class RooScriptGenerator
 		String regexp = element.selectSingleNode(element.getUniquePath() + "//*[name()='pattern']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='pattern']/@value").getStringValue();		
 		String minValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='minExclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='minExclusive']/@value").getStringValue() ; 
 		String maxValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='maxExclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='maxExclusive']/@value").getStringValue() ;
+
+		if( minValue == null )
+		{
+			minValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='minInclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='minInclusive']/@value").getStringValue() ;
+		}
+		if( maxValue == null )
+		{
+			maxValue = element.selectSingleNode(element.getUniquePath() + "//*[name()='maxInclusive']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='maxInclusive']/@value").getStringValue() ;		
+		}
+
+		
 		String minLength = element.selectSingleNode(element.getUniquePath() + "//*[name()='minLength']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='minLength']/@value").getStringValue() ; 
 		String maxLength = element.selectSingleNode(element.getUniquePath() + "//*[name()='maxLength']/@value") == null ? null : element.selectSingleNode(element.getUniquePath() + "//*[name()='maxLength']/@value").getStringValue() ;
 
@@ -831,12 +897,7 @@ public class RooScriptGenerator
 			{
 				rooField.unique = true;
 			}
-
 		}
-
-		
-		
-		
 		
 		rooField.fieldName = convertReservedWords( elementName );
 		rooField.xsdType = type;
@@ -1006,7 +1067,6 @@ public class RooScriptGenerator
 			return "number --type int --min -1";
 		if (type.equals("nonPositiveInteger"))
 			return "number --type int --max 0";
-		;
 		if (type.equals("normalizedString"))
 			return "string";
 		if (type.equals("positiveInteger"))
@@ -1076,14 +1136,21 @@ public class RooScriptGenerator
 		Option xsdOption = new Option(XSD_FILE_OPTION, true, "The XSD file to be parsed");
 		Option targetFileOption = new Option(TARGET_FILE_OPTION, true, "The target file to write the roo script to");
 		Option databaseTypeOption = new Option(DATABASE_TYPE_OPTION, true, "The type of database to be used for persisting the entities in the RESTful service. Default is " + DEFAULT_DATABASE_TYPE + ". Valid options are " + Arrays.asList( DATATBASE_TYPE.values() ) );
+		Option webTierOption = new Option(WEB_TIER_OPTION, true, "Flag to enable generation of roo commands to create a web tier");
+		Option seleniumTestOption = new Option(SELENIUM_TESTS_OPTION, true, "Flag to enable generation of roo commands to create selenium");
+		Option jsonOnlyOption = new Option(JSON_ONLY_OPTION, true, "Flag to specify that only JSON entities get generated for the web tier");
 		
 		xsdOption.setRequired(true);
 		targetFileOption.setRequired(true);
 		databaseTypeOption.setRequired(false);
+		webTierOption.setRequired(false);
+		seleniumTestOption.setRequired(false);
 		
 		options.addOption( xsdOption );
 		options.addOption(targetFileOption);
 		options.addOption(databaseTypeOption);
+		options.addOption(webTierOption);
+		options.addOption(seleniumTestOption);
 		
 		// Parse
 		BasicParser parser = new BasicParser();
@@ -1100,12 +1167,20 @@ public class RooScriptGenerator
 			// Configure the generator
 			RooScriptGenerator generator = new RooScriptGenerator();
 			generator.setSrcFile(new File(cl.getOptionValue(XSD_FILE_OPTION)));
-			generator.setTargetFilename(new File(cl.getOptionValue(TARGET_FILE_OPTION)));
+			generator.setTargetFilename(new File(cl.getOptionValue(TARGET_FILE_OPTION)));			
 			
 			// Optional parameters
 			if( cl.hasOption(DATABASE_TYPE_OPTION) )
 			{
 				generator.setDatabaseType( DATATBASE_TYPE.valueOf( cl.getOptionValue(DATABASE_TYPE_OPTION) ) );
+			}
+			if( cl.hasOption(WEB_TIER_OPTION) )
+			{
+				generator.setGenerateWebTier( Boolean.parseBoolean(cl.getOptionValue(WEB_TIER_OPTION)) );
+			}
+			if( cl.hasOption(SELENIUM_TESTS_OPTION) )
+			{
+				generator.setGenerateSeleniumTests( Boolean.parseBoolean(cl.getOptionValue(SELENIUM_TESTS_OPTION)) );
 			}
 			
 			generator.generateScript();
@@ -1122,4 +1197,42 @@ public class RooScriptGenerator
 		HelpFormatter f = new HelpFormatter();
 	    f.printHelp("A utility that parses an XSD file defining your entity domains and generates a roo file which builds RESTful webservice for your entities using Spring Roo:", options);
 	}
+
+	/**
+	 * @return the generateWebTier
+	 */
+	public boolean isGenerateWebTier()
+	{
+		return generateWebTier;
+	}
+
+	/**
+	 * @param generateWebTier the generateWebTier to set
+	 */
+	public void setGenerateWebTier(boolean generateWebTier)
+	{
+		this.generateWebTier = generateWebTier;
+		if( !generateWebTier )
+		{
+			setGenerateSeleniumTests( false );
+		}
+	}
+
+	/**
+	 * @return the generateSeleniumTests
+	 */
+	public boolean isGenerateSeleniumTests()
+	{
+		return generateSeleniumTests;
+	}
+
+	/**
+	 * @param generateSeleniumTests the generateSeleniumTests to set
+	 */
+	public void setGenerateSeleniumTests(boolean generateSeleniumTests)
+	{
+		this.generateSeleniumTests = generateSeleniumTests;
+	}
+	
+	
 }

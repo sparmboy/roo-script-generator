@@ -24,3 +24,4 @@ field string --fieldName username --class org.example.test.Person --unique
 
 json all
 
+selenium test --controller org.example.test.PersonController

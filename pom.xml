@@ -17,6 +17,10 @@
 	<profiles>
 		<profile>
 			<id>dev</id>
+			<properties>
+				<!-- This is the schema name for the generated code we want to test -->
+				<testSchema>test</testSchema>
+			</properties>
 		</profile>
 		<profile>
 			<id>integration-test</id>
@@ -166,7 +170,8 @@
 							</arguments>
 						</configuration>
 					</execution>
-					<execution>
+					
+<!-- 					<execution>
 						<id>build and start webapp</id>
 						<phase>pre-integration-test</phase>
 						<goals>
@@ -199,7 +204,7 @@
 							</arguments>
 						</configuration>
 					</execution>
-
+ -->
 
 				</executions>
 			</plugin>

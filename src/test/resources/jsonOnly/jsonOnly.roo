@@ -30,8 +30,8 @@ field string --fieldName username --class org.example.test.Person --unique
 # Web Tier	       #
 ########################
 json all
-web mvc json setup
-web mvc json all --package org.example.test
+web mvc setup
+web mvc all --package org.example.test
 
 ########################
 # Add Selenium Tests   #

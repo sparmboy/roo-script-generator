@@ -1,0 +1,23 @@
+##########################################
+# This script only contains the entities #
+# and should be run against an existing  #
+# roo projects to update any changes in  #
+# the model							  #
+##########################################
+#######################
+# Update the entities #
+#######################
+
+# Person
+entity jpa --class org.example.test.Person --activeRecord false --testAutomatically
+repository jpa --interface org.example.test.PersonRepository --entity org.example.test.Person
+
+########################
+# Entity Relationships #
+########################
+field string --fieldName name --class org.example.test.Person --sizeMin 2 --sizeMax 50 --comment "This is the first name of the person" 
+field string --fieldName surname --class org.example.test.Person --value Jones 
+field number --type java.lang.Integer --fieldName age --class org.example.test.Person --notNull --min 0 --max 200 
+field number --type double --fieldName percentage --class org.example.test.Person --decimalMin 0.0 --decimalMax 100.0 
+field string --fieldName email --class org.example.test.Person --regexp [a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])? 
+field string --fieldName username --class org.example.test.Person --unique 
