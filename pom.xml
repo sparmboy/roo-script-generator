@@ -3,7 +3,7 @@
 
 	<groupId>com.sarm.utils</groupId>
 	<artifactId>roo-script-generator</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>roo-script-generator</name>
@@ -312,6 +312,6 @@
 		<connection>scm:git:git@github.com:sparmboy/roo-script-generator.git</connection>
 		<url>scm:git:git@github.com:sparmboy/roo-script-generator.git</url>
 		<developerConnection>scm:git:git@github.com:sparmboy/roo-script-generator.git</developerConnection>
-	  <tag>roo-script-generator-1.0.0</tag>
+	  <tag>HEAD</tag>
   </scm>
 </project>
